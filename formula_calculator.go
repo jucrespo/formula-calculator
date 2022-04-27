@@ -1,9 +1,10 @@
-package formula_calculator
+package formulacalculator
 
 import (
 	"fmt"
-	"github.com/antonmedv/expr"
 	"strings"
+
+	"github.com/antonmedv/expr"
 )
 
 type FormulaGetter interface {
@@ -11,8 +12,8 @@ type FormulaGetter interface {
 }
 
 func CalculateFormula(formulaCode string, parameters interface{}, formulaGetter FormulaGetter) (interface{}, error) {
-	codeWithoutBrackets := strings.Replace(formulaCode, "(", "", -1)
-	codeWithoutBrackets = strings.Replace(codeWithoutBrackets, ")", "", -1)
+	codeWithoutBrackets := strings.ReplaceAll(formulaCode, "(", "")
+	codeWithoutBrackets = strings.ReplaceAll(codeWithoutBrackets, ")", "")
 	words := strings.Split(codeWithoutBrackets, " ")
 
 	for _, word := range words {
@@ -27,7 +28,7 @@ func CalculateFormula(formulaCode string, parameters interface{}, formulaGetter 
 				return nil, err
 			}
 
-			formulaCode = strings.Replace(formulaCode, word, fmt.Sprintf("%v", result), -1)
+			formulaCode = strings.ReplaceAll(formulaCode, word, fmt.Sprintf("%v", result))
 		}
 	}
 

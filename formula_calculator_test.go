@@ -1,11 +1,14 @@
-package formula_calculator
+package formulacalculator
 
 import (
-    "fmt"
-    "github.com/stretchr/testify/assert"
+	"fmt"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+var _code = "(Output.Six - Input.Two) * Input.Inner.Three / formula.inner_formula"
 
 type InnerStruct struct {
 	Three float64
@@ -29,10 +32,12 @@ type Env struct {
 	Output *Output
 }
 
-var _formulas map[string]string
-var _input Input
-var _output Output
-var _env Env
+var (
+	_formulas map[string]string
+	_input    Input
+	_output   Output
+	_env      Env
+)
 
 func setup() {
 	_formulas = make(map[string]string)
@@ -76,7 +81,7 @@ func TestCalculateFormula_ResultNoDecimals(t *testing.T) {
 	code := "(Output.Six - Input.Two) * Input.Inner.Three / (formula.inner_formula + Input.Two)"
 
 	out, err := CalculateFormula(code, _env, FormulaGetterMock{})
-    assert.Nil(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, float64(2), out.(float64))
 }
 
@@ -84,66 +89,62 @@ func TestCalculateFormula_ResultWithDecimals(t *testing.T) {
 	setup()
 
 	_formulas["inner_formula"] = "Output.Six - Input.One"
-	code := "(Output.Six - Input.Two) * Input.Inner.Three / formula.inner_formula"
 
-    out, err := CalculateFormula(code, _env, FormulaGetterMock{})
-    assert.Nil(t, err)
-    assert.Equal(t, 2.4, out.(float64))
+	out, err := CalculateFormula(_code, _env, FormulaGetterMock{})
+	assert.Nil(t, err)
+	assert.Equal(t, 2.4, out.(float64))
 }
 
 func TestCalculateFormula_InexistentInnerFormula(t *testing.T) {
-    setup()
+	setup()
 
-    code := "(Output.Six - Input.Two) * Input.Inner.Three / formula.inner_formula"
-
-    _, err := CalculateFormula(code, _env, FormulaGetterMock{})
-    assert.NotNil(t, err)
-    assert.Equal(t, "formula 'inner_formula' does not exist", err.Error())
+	_, err := CalculateFormula(_code, _env, FormulaGetterMock{})
+	assert.NotNil(t, err)
+	assert.Equal(t, "formula 'inner_formula' does not exist", err.Error())
 }
 
 func TestCalculateFormula_InvalidFormula(t *testing.T) {
-    setup()
+	setup()
 
-    code := "name + age"
+	code := "name + age"
 
-    _, err := CalculateFormula(code, _env, FormulaGetterMock{})
-    assert.NotNil(t, err)
+	_, err := CalculateFormula(code, _env, FormulaGetterMock{})
+	assert.NotNil(t, err)
 }
 
 func TestCalculateFormula_InvalidInnerFormula(t *testing.T) {
-    setup()
+	setup()
 
-    code := "(Output.Six - Input.Two) * Input.Inner.Three / formula.inner_formula"
-    _formulas["inner_formula"] = "name + age"
+	_formulas["inner_formula"] = "name + age"
 
-    _, err := CalculateFormula(code, _env, FormulaGetterMock{})
-    assert.NotNil(t, err)
+	_, err := CalculateFormula(_code, _env, FormulaGetterMock{})
+	assert.NotNil(t, err)
 }
 
 func TestCalculateFormula_CustomFormulaReturnError(t *testing.T) {
-    setup()
+	setup()
 
-    code := "error()"
+	code := "error()"
 
-    env := map[string]interface{}{
-        "error": func() (int, error) {
-            return 0, fmt.Errorf("custom error")
-        },
-    }
+	env := map[string]interface{}{
+		"error": func() (int, error) {
+			return 0, fmt.Errorf("custom error")
+		},
+	}
 
-    _, err := CalculateFormula(code, env, FormulaGetterMock{})
-    assert.NotNil(t, err)
-    assert.Equal(t, "custom error", err.Error())
+	_, err := CalculateFormula(code, env, FormulaGetterMock{})
+	assert.NotNil(t, err)
+	assert.Equal(t, "custom error", err.Error())
 }
 
 func TestCalculateFormula_CustomFunctionWithStructs(t *testing.T) {
 	setup()
 
-	env := map[string]interface{} {
-		"Input": &_input,
+	env := map[string]interface{}{
+		"Input":  &_input,
 		"Output": &_output,
 		"round": func(i float64) float64 {
-			return math.Floor(i*100)/100 //round (down) to two decimals
+			return math.Floor(i*100) / 100 // round (down) to two decimals
 		},
 	}
 
